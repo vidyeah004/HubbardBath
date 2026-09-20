@@ -13,9 +13,9 @@ The project is intentionally built from first principles before using higher-lev
 
 > How do interaction strength and temperature affect thermalisation in a finite Fermi–Hubbard system, and how does the difficulty of physical relaxation compare with the difficulty of algorithmically preparing the same Gibbs state?
 
-## Current milestone — 04: Liouvillian spectral analysis
+## Current milestone — 05: Jordan–Wigner fermion-to-qubit mapping
 
-Milestones 01–03 established the two-site spinful Fermi–Hubbard model, its exact finite-temperature Gibbs states, and a validated number-conserving detailed-balance Lindblad model. Milestone 04 asks the first parameter-sweep research question: how do interaction strength and temperature change the Liouvillian spectral gap and the operational thermal mixing time?
+Milestones 01–04 established the two-site spinful Fermi–Hubbard model, its finite-temperature Gibbs states, a validated detailed-balance Lindblad model, and a spectral-gap versus mixing-time research sweep. Milestone 05 begins the quantum-algorithm half of the project by rewriting the same fermionic Hamiltonian as an explicit four-qubit Pauli sum and verifying exact equivalence.
 
 Mode ordering:
 
@@ -126,4 +126,34 @@ See:
 ```text
 notebooks/04_liouvillian_gap_vs_mixing.ipynb
 notes/04_liouvillian_gap_and_mixing.md
+```
+
+
+### Milestone 05 Jordan–Wigner mapping
+
+```bash
+python experiments/run_jordan_wigner_mapping.py
+```
+
+The two-site, four-mode Hubbard Hamiltonian is written as
+
+```text
+H = sum_j alpha_j P_j
+```
+
+with explicit Jordan–Wigner parity strings. The analytic Pauli coefficients are independently checked using the Hilbert–Schmidt Pauli decomposition, the reconstructed qubit Hamiltonian is compared directly against the fermionic matrix, and the spectra are required to agree to numerical precision.
+
+Milestone 05 also records
+
+```text
+alpha = sum_j |alpha_j|
+```
+
+which becomes the LCU normalization used later in the block-encoding milestone.
+
+See:
+
+```text
+notebooks/05_jordan_wigner_to_qubits.ipynb
+notes/05_jordan_wigner_mapping.md
 ```
