@@ -13,9 +13,9 @@ The project is intentionally built from first principles before using higher-lev
 
 > How do interaction strength and temperature affect thermalisation in a finite Fermi–Hubbard system, and how does the difficulty of physical relaxation compare with the difficulty of algorithmically preparing the same Gibbs state?
 
-## Current milestone — 08: Thermal polynomials and QSVT readiness
+## Current milestone — 09: Physical vs algorithmic thermalisation
 
-Milestones 01–07 established the two-site Fermi–Hubbard model, its finite-temperature and open-system physics, Liouvillian-gap analysis, exact four-qubit Pauli representation, Hamiltonian simulation, and an explicit LCU block encoding of H/alpha. Milestone 08 builds a bounded thermal matrix function on the encoded interval, approximates it with Chebyshev polynomials, and validates the resulting Gibbs-state approximation.
+Milestones 01–08 established the two-site Fermi–Hubbard model, its finite-temperature and open-system physics, Liouvillian-gap analysis, exact four-qubit Pauli representation, Hamiltonian simulation, LCU block encoding, and a bounded thermal-polynomial approximation. Milestone 09 compares the physical relaxation metrics and algorithmic polynomial degree on the same half-filled Gibbs target.
 
 Mode ordering:
 
@@ -239,3 +239,38 @@ See:
 notebooks/08_thermal_polynomial_qsvt.ipynb
 notes/08_thermal_polynomial_qsvt.md
 ```
+
+
+### Milestone 09 physical vs algorithmic comparison
+
+```bash
+python experiments/run_physical_algorithmic_comparison.py
+```
+
+The comparison uses the common grid
+
+```text
+U/t    = 0, 2, 4, 6, 8
+beta t = 0.25, 0.5, 1, 2
+```
+
+and records, for each point:
+
+- Liouvillian spectral gap and inverse gap;
+- persistent trace-distance mixing time;
+- LCU normalization alpha;
+- minimum bounded thermal-polynomial degree at scalar error 1e-4;
+- half-filled Gibbs-state error of the polynomial route.
+
+A consistency correction is applied before the comparison: the polynomial acts on the full four-qubit Hamiltonian, but its thermal state is projected and renormalized in the same N=2 sector used by the open-system analysis.
+
+The milestone reports overall Pearson/Spearman correlations plus correlations at fixed beta and fixed U so that a shared temperature trend is not mistaken for a deeper relationship.
+
+See:
+
+```text
+notebooks/09_physical_vs_algorithmic.ipynb
+notes/09_physical_vs_algorithmic.md
+```
+
+All comparisons are finite-system and model-dependent. Mixing time depends on the chosen bath and rate scale; polynomial degree is not a compiled fault-tolerant gate count.
