@@ -52,6 +52,9 @@ jobs:
       - name: Physical vs algorithmic comparison
         run: python experiments/run_physical_algorithmic_comparison.py
 
+      - name: Explicit QSP phase synthesis
+        run: python experiments/run_qsp_phase_synthesis.py
+
       - name: Print headline summaries
         if: always()
         run: |
@@ -69,6 +72,9 @@ jobs:
           echo
           echo "===== M9: Physical vs algorithmic ====="
           cat results/milestone09_summary.json 2>/dev/null || true
+          echo
+          echo "===== M10: Explicit QSP phase synthesis ====="
+          cat results/milestone10_summary.json 2>/dev/null || true
 
       - name: Upload research outputs
         if: always()
