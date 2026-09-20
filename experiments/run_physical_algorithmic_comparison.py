@@ -33,6 +33,7 @@ def main() -> None:
 
     physical_epsilon = 1e-2
     algorithmic_epsilon = 1e-4
+    algorithmic_gibbs_epsilon = 1e-2
     rate_scale = 0.2
 
     rows = []
@@ -43,6 +44,7 @@ def main() -> None:
                 beta=beta,
                 physical_epsilon=physical_epsilon,
                 algorithmic_epsilon=algorithmic_epsilon,
+                algorithmic_gibbs_epsilon=algorithmic_gibbs_epsilon,
                 rate_scale=rate_scale,
                 horizon_in_inverse_gaps=12.0,
                 num_time_points=241,
@@ -53,7 +55,8 @@ def main() -> None:
                 f"U/t={U:>4.1f} beta*t={beta:>4.2f} "
                 f"tmix={row['mixing_time']:.5g} "
                 f"1/gap={row['inverse_liouvillian_gap']:.5g} "
-                f"degree={row['thermal_polynomial_degree']:>3d} "
+                f"d_scalar={row['thermal_polynomial_degree']:>3d} "
+                f"d_G={row['state_targeted_polynomial_degree']:>3d} "
                 f"valid={row['comparison_valid']}"
             )
 
@@ -74,11 +77,15 @@ def main() -> None:
         ),
         "physical_mixing_tolerance": physical_epsilon,
         "algorithmic_scalar_tolerance": algorithmic_epsilon,
+        "algorithmic_gibbs_trace_distance_tolerance":
+            algorithmic_gibbs_epsilon,
         "bath_rate_scale": rate_scale,
         "interpretation": (
             "All correlations are descriptive finite-system observations. "
-            "The absolute physical time scale depends on the fixed bath rate, "
-            "and polynomial degree is not a compiled logical-gate count."
+            "The absolute physical time scale depends on the fixed bath rate. "
+            "The primary algorithmic degree is the first bounded Chebyshev "
+            "degree whose sector-conditioned Gibbs state reaches trace "
+            "distance 1e-2; it is not a compiled logical-gate count."
         ),
     })
 
@@ -93,11 +100,11 @@ def main() -> None:
         if not group:
             continue
         plt.scatter(
-            [row["thermal_polynomial_degree"] for row in group],
+            [row["state_targeted_polynomial_degree"] for row in group],
             [row["mixing_time"] for row in group],
             label=fr"$\beta t={beta}$",
         )
-    plt.xlabel("Minimum bounded thermal-polynomial degree")
+    plt.xlabel("Minimum degree for Gibbs trace distance <= 1e-2")
     plt.ylabel(r"Physical mixing time $t_{\mathrm{mix}}$")
     plt.title("Physical vs algorithmic thermalisation difficulty")
     plt.legend()
@@ -115,11 +122,11 @@ def main() -> None:
         if not group:
             continue
         plt.scatter(
-            [row["thermal_polynomial_degree"] for row in group],
+            [row["state_targeted_polynomial_degree"] for row in group],
             [row["inverse_liouvillian_gap"] for row in group],
             label=fr"$\beta t={beta}$",
         )
-    plt.xlabel("Minimum bounded thermal-polynomial degree")
+    plt.xlabel("Minimum degree for Gibbs trace distance <= 1e-2")
     plt.ylabel(r"Inverse Liouvillian gap $1/\Delta_{\mathcal{L}}$")
     plt.title("Spectral relaxation scale vs polynomial degree")
     plt.legend()
@@ -140,14 +147,14 @@ def main() -> None:
     for row in rows:
         i = beta_values.index(row["beta_t"])
         j = U_values.index(row["U_over_t"])
-        degree_grid[i, j] = row["thermal_polynomial_degree"]
+        degree_grid[i, j] = row["state_targeted_polynomial_degree"]
         if row["comparison_valid"]:
             mixing_grid[i, j] = row["mixing_time"]
 
     for data, title, filename in [
         (
             degree_grid,
-            "Algorithmic difficulty: polynomial degree",
+            "Algorithmic difficulty: Gibbs-targeted degree",
             "milestone09_degree_heatmap.png",
         ),
         (

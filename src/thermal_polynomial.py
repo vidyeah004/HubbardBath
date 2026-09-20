@@ -399,3 +399,56 @@ def sector_gibbs_trace_distance_error(
         approximation.beta,
     )
     return trace_distance(approximate, exact)
+
+
+
+def minimum_degree_for_sector_gibbs_error(
+    hamiltonian: Array,
+    beta: float,
+    alpha: float,
+    target_trace_distance: float,
+    *,
+    num_modes: int = 4,
+    particle_number: int = 2,
+    max_degree: int = 256,
+    grid_size: int = 4001,
+) -> tuple[ThermalPolynomial, float]:
+    """Find the first bounded polynomial meeting a canonical Gibbs-state target.
+
+    Unlike minimum_degree_for_error, which controls a uniform scalar-function
+    error over the full block-encoding interval, this metric is explicitly
+    state-targeted: after applying p(H/alpha), squaring the amplitude,
+    conditioning on the requested particle-number sector, and normalizing,
+    the resulting density matrix must lie within target_trace_distance of the
+    exact canonical Gibbs state.
+
+    Both metrics are retained because their divergence at low temperature is
+    itself informative.
+    """
+    if target_trace_distance <= 0:
+        raise ValueError("target_trace_distance must be positive")
+    if max_degree < 0:
+        raise ValueError("max_degree must be non-negative")
+
+    for degree in range(max_degree + 1):
+        approximation = chebyshev_thermal_polynomial(
+            beta=beta,
+            alpha=alpha,
+            degree=degree,
+            grid_size=grid_size,
+            enforce_unit_bound=True,
+        )
+        error = sector_gibbs_trace_distance_error(
+            hamiltonian,
+            approximation,
+            num_modes=num_modes,
+            particle_number=particle_number,
+        )
+        if error <= target_trace_distance:
+            return approximation, float(error)
+
+    raise ValueError(
+        "no polynomial up to degree "
+        f"{max_degree} reached sector Gibbs trace distance "
+        f"{target_trace_distance}"
+    )

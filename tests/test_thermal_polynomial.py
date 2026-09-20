@@ -12,6 +12,7 @@ from src.thermal_polynomial import (
     chebyshev_thermal_polynomial,
     gibbs_trace_distance_error,
     minimum_degree_for_error,
+    minimum_degree_for_sector_gibbs_error,
     parity_components,
     parity_reconstruction_error,
     qsvt_readiness_report,
@@ -144,3 +145,20 @@ def test_sector_conditioned_polynomial_recovers_half_filled_gibbs_state():
     )
 
     assert error < 1e-2
+
+
+
+def test_state_targeted_degree_reaches_requested_half_filled_accuracy():
+    h, alpha = reference()
+    approximation, error = minimum_degree_for_sector_gibbs_error(
+        h,
+        beta=1.0,
+        alpha=alpha,
+        target_trace_distance=1e-2,
+        num_modes=4,
+        particle_number=2,
+        max_degree=64,
+    )
+
+    assert approximation.degree >= 0
+    assert error <= 1e-2
