@@ -1,12 +1,13 @@
 """Open-system dynamics for HubbardBath Milestone 03.
 
-This module builds a finite-dimensional, Davies-inspired Lindblad generator
+This module builds a finite-dimensional Davies reference Lindblad generator
 inside the fixed-particle-number Hubbard sector. Bath couplings preserve total
-particle number and transition rates obey thermal detailed balance.
+particle number, transition rates obey thermal detailed balance, and
+Bohr-frequency components are constructed from spectral projectors so exact
+degeneracies do not introduce arbitrary eigenvector-basis dependence.
 
-The construction is a controlled small-system model, not a microscopic bath
-derivation. Its purpose is to establish and validate thermalisation before
-Milestone 04 studies Liouvillian spectra and mixing-time scaling.
+The construction remains a controlled small-system reference bath, not a
+microscopic material-environment derivation.
 """
 from __future__ import annotations
 
@@ -54,6 +55,151 @@ def default_bath_couplings(
     ]
 
 
+def energy_eigenspaces(
+    hamiltonian: Array,
+    energy_tol: float = 1e-10,
+) -> list[tuple[float, Array]]:
+    """Return basis-invariant spectral projectors of H.
+
+    Eigenvalues that differ by at most energy_tol are grouped into one
+    degenerate eigenspace. Each returned projector is therefore invariant
+    under arbitrary unitary rotations of the eigenvectors inside that
+    degenerate subspace.
+    """
+    if energy_tol <= 0:
+        raise ValueError("energy_tol must be positive")
+    if (
+        hamiltonian.ndim != 2
+        or hamiltonian.shape[0] != hamiltonian.shape[1]
+    ):
+        raise ValueError("hamiltonian must be square")
+    if not np.allclose(
+        hamiltonian,
+        hamiltonian.conj().T,
+        atol=1e-12,
+    ):
+        raise ValueError("hamiltonian must be Hermitian")
+
+    energies, vectors = np.linalg.eigh(hamiltonian)
+    groups: list[list[int]] = []
+
+    for index, energy in enumerate(energies):
+        if not groups:
+            groups.append([index])
+            continue
+
+        reference = float(np.mean(energies[groups[-1]]))
+        if abs(float(energy) - reference) <= energy_tol:
+            groups[-1].append(index)
+        else:
+            groups.append([index])
+
+    eigenspaces: list[tuple[float, Array]] = []
+    for indices in groups:
+        subspace = vectors[:, indices]
+        projector = subspace @ subspace.conj().T
+        representative_energy = float(np.mean(energies[indices]))
+        eigenspaces.append((representative_energy, projector))
+
+    return eigenspaces
+
+
+def _add_frequency_component(
+    grouped: list[tuple[float, Array]],
+    omega: float,
+    component: Array,
+    frequency_tol: float,
+) -> None:
+    """Accumulate matrix contributions with numerically equal frequencies."""
+    for index, (existing_omega, existing_component) in enumerate(grouped):
+        if abs(existing_omega - omega) <= frequency_tol:
+            grouped[index] = (
+                0.5 * (existing_omega + omega),
+                existing_component + component,
+            )
+            return
+    grouped.append((float(omega), component.copy()))
+
+
+def bohr_frequency_components(
+    hamiltonian: Array,
+    coupling: Array,
+    *,
+    energy_tol: float = 1e-10,
+    frequency_tol: float = 1e-10,
+    matrix_element_tol: float = 1e-12,
+) -> dict[float, Array]:
+    """Return basis-invariant Davies components A(omega).
+
+    The convention is
+
+        [H, A(omega)] = -omega A(omega),  omega >= 0.
+
+    For positive frequency,
+
+        A(omega) = sum_{E_high-E_low=omega}
+                   Pi_low A Pi_high,
+
+    so A(omega) lowers system energy by omega. The zero-frequency component is
+
+        A(0) = sum_E Pi_E A Pi_E,
+
+    which retains the complete action inside degenerate energy subspaces.
+
+    Contributions sharing one Bohr frequency are summed before a Lindblad
+    jump operator is created. This is the key difference from constructing
+    rank-one jumps from arbitrary individual eigenvectors.
+    """
+    if coupling.shape != hamiltonian.shape:
+        raise ValueError("coupling operator must match H")
+    if frequency_tol <= 0:
+        raise ValueError("frequency_tol must be positive")
+    if matrix_element_tol < 0:
+        raise ValueError("matrix_element_tol cannot be negative")
+    if not np.allclose(coupling, coupling.conj().T, atol=1e-12):
+        raise ValueError(
+            "Davies reference construction expects Hermitian couplings"
+        )
+
+    eigenspaces = energy_eigenspaces(
+        hamiltonian,
+        energy_tol=energy_tol,
+    )
+    dimension = hamiltonian.shape[0]
+
+    grouped: list[tuple[float, Array]] = []
+
+    zero_component = np.zeros(
+        (dimension, dimension),
+        dtype=complex,
+    )
+    for _, projector in eigenspaces:
+        zero_component += projector @ coupling @ projector
+
+    if np.linalg.norm(zero_component, ord="fro") > matrix_element_tol:
+        grouped.append((0.0, zero_component))
+
+    for low_index, (energy_low, projector_low) in enumerate(eigenspaces):
+        for energy_high, projector_high in eigenspaces[low_index + 1 :]:
+            omega = float(energy_high - energy_low)
+            if omega <= energy_tol:
+                continue
+
+            component = projector_low @ coupling @ projector_high
+            if np.linalg.norm(component, ord="fro") <= matrix_element_tol:
+                continue
+
+            _add_frequency_component(
+                grouped,
+                omega,
+                component,
+                frequency_tol,
+            )
+
+    grouped.sort(key=lambda item: item[0])
+    return {float(omega): component for omega, component in grouped}
+
+
 def detailed_balance_jump_operators(
     hamiltonian: Array,
     beta: float,
@@ -61,74 +207,63 @@ def detailed_balance_jump_operators(
     rate_scale: float = 0.2,
     matrix_element_tol: float = 1e-12,
     energy_tol: float = 1e-10,
+    frequency_tol: float = 1e-10,
 ) -> list[Array]:
-    """Build energy-basis jump operators satisfying thermal detailed balance.
+    """Build a projector-based Davies reference generator.
 
-    For E_high > E_low we use
+    For each Hermitian system coupling A_a, the coupling is decomposed into
+    basis-invariant Bohr-frequency components A_a(omega). A flat positive bath
+    spectrum is used as the reference model:
 
-        gamma_up / gamma_down = exp[-beta (E_high - E_low)].
+        gamma_down(omega) = rate_scale
+        gamma_up(omega)   = rate_scale * exp(-beta * omega)
 
-    The downward rate uses a flat reference bath spectrum multiplied by the
-    total squared matrix element of the supplied system-bath couplings.
+    for omega > 0, so the KMS/detailed-balance ratio is
 
-    Degenerate transitions are assigned equal forward/backward rates.
+        gamma_up / gamma_down = exp(-beta * omega).
+
+    Zero-frequency components are included with rate rate_scale.
+
+    This remains a controlled reference bath rather than a microscopic
+    material-environment derivation, but unlike the earlier pairwise
+    eigenvector construction it is invariant under basis rotations inside
+    exactly degenerate energy eigenspaces.
     """
     if beta < 0:
         raise ValueError("beta must be non-negative")
     if rate_scale <= 0:
         raise ValueError("rate_scale must be positive")
 
-    energies, vectors = np.linalg.eigh(hamiltonian)
-    dimension = hamiltonian.shape[0]
-
     for coupling in couplings:
         if coupling.shape != hamiltonian.shape:
             raise ValueError("all coupling operators must match H")
 
-    couplings_energy = [
-        vectors.conj().T @ coupling @ vectors
-        for coupling in couplings
-    ]
-
     jumps: list[Array] = []
 
-    for low in range(dimension):
-        for high in range(low + 1, dimension):
-            omega = float(energies[high] - energies[low])
-            strength = float(
-                sum(
-                    abs(coupling[low, high]) ** 2
-                    for coupling in couplings_energy
-                )
-            )
+    for coupling in couplings:
+        components = bohr_frequency_components(
+            hamiltonian,
+            coupling,
+            energy_tol=energy_tol,
+            frequency_tol=frequency_tol,
+            matrix_element_tol=matrix_element_tol,
+        )
 
-            if strength <= matrix_element_tol:
+        for omega, component in components.items():
+            if omega <= energy_tol:
+                jumps.append(np.sqrt(rate_scale) * component)
                 continue
 
-            base_rate = rate_scale * strength
-
-            if omega > energy_tol:
-                rate_down = base_rate
-                rate_up = base_rate * np.exp(-beta * omega)
-            else:
-                rate_down = base_rate
-                rate_up = base_rate
-
-            ket_low = vectors[:, low:low + 1]
-            ket_high = vectors[:, high:high + 1]
-
+            jumps.append(np.sqrt(rate_scale) * component)
             jumps.append(
-                np.sqrt(rate_down) * (ket_low @ ket_high.conj().T)
-            )
-            jumps.append(
-                np.sqrt(rate_up) * (ket_high @ ket_low.conj().T)
+                np.sqrt(rate_scale * np.exp(-beta * omega))
+                * component.conj().T
             )
 
     if not jumps:
         raise ValueError("bath couplings generated no transitions")
 
     return jumps
-
 
 def liouvillian(
     hamiltonian: Array,
