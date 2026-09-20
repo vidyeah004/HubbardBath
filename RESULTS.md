@@ -1,6 +1,6 @@
 # HubbardBath — Results and Discussion
 
-This document records the reproduced numerical results of the finite-system HubbardBath study. All headline results below were regenerated from a clean GitHub Actions run on commit `2d61eab2ba3da9d3aab68706cb89cd8a9be96bbc`.
+This document records the reproduced numerical results of the finite-system HubbardBath study. All headline results below were regenerated from clean GitHub Actions runs; the explicit QSP synthesis extension was reproduced on commit `a5f358b6df087dd520f885583244f2589cbf74ea`.
 
 ## Research question
 
@@ -158,6 +158,38 @@ Requiring the actual half-filled Gibbs trace distance to be at most `1e-2` incre
 
 This refinement is part of the result: **the approximation metric matters** when a matrix function is later squared and normalized into a thermal state.
 
+## 8. Explicit QSP phase synthesis closes the polynomial-to-phases gap
+
+For the reference point `U/t = 4`, `beta t = 1`, the state-targeted thermal polynomial reaches half-filled Gibbs trace distance `0.00883` at degree 8.
+
+Because the thermal polynomial has mixed parity, its even and odd Chebyshev components were synthesized separately using symmetric QSP:
+
+```text
+even component:
+degree                 = 8
+full QSP phase count   = 9
+solver residual        = 1.17e-16
+signal-response error  = 3.89e-16
+
+odd component:
+degree                 = 7
+full QSP phase count   = 8
+solver residual        = 1.33e-16
+signal-response error  = 3.33e-16
+```
+
+HubbardBath independently reconstructs the `Wx`-convention QSP matrix product from the returned phase angles rather than relying only on the phase solver's internal convergence result.
+
+The sum of the independently reconstructed even and odd QSP responses matches the original thermal polynomial with maximum error
+
+```text
+6.66e-16.
+```
+
+This supports the stronger statement that the project contains **explicit, numerically validated QSP phase synthesis** for the parity-resolved thermal transformation.
+
+The remaining circuit-level step is to combine the two parity sequences coherently, for example through an ancilla/LCU construction, and then compile that construction into a full QSVT Gibbs-preparation circuit. That step is not claimed here.
+
 ## Interpretation limits
 
 The study is intentionally small and explicit.
@@ -166,7 +198,7 @@ The study is intentionally small and explicit.
 - The physical mixing scale is specific to the chosen Davies-inspired coupling operators, rate scale `0.2`, doublon initial state, and trace-distance threshold.
 - The LCU normalization depends on the chosen Pauli representation.
 - `d_G` is a polynomial/query-complexity proxy, not a logical T-count or compiled circuit depth.
-- The project validates a bounded parity-decomposed QSVT-oriented polynomial, but does not claim explicit QSP phase synthesis.
+- The project synthesizes and independently validates explicit symmetric-QSP phases for the even and odd thermal-polynomial components. It does not claim a fully compiled coherent or fault-tolerant QSVT Gibbs-preparation circuit.
 - Correlation coefficients summarize a deterministic parameter grid; their p-values should not be interpreted as population-level statistical evidence.
 
 ## Main conclusion
