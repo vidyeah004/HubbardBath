@@ -1,21 +1,49 @@
 # HubbardBath
 
-**Open-system thermalisation and quantum Gibbs-state preparation in finite Fermi–Hubbard systems.**
+**Open-system thermalisation and quantum Gibbs-state preparation in a finite Fermi–Hubbard model.**
 
-HubbardBath is a small-system research project at the boundary of quantum many-body physics, open quantum systems, and quantum algorithms. The long-term goal is to compare two routes to the same finite-temperature state of an interacting fermionic system:
+HubbardBath is a first-principles research project connecting **open quantum systems**, **many-body physics**, and **quantum algorithms** on one controlled thermal target.
 
-1. **Physical thermalisation:** a Fermi–Hubbard system relaxes under a thermal Lindbladian.
-2. **Algorithmic preparation:** the same Gibbs state is approached through qubit mappings, Hamiltonian simulation, block-encoding ideas, and polynomial matrix transformations.
+The project asks:
 
-The project is intentionally built from first principles before using higher-level quantum libraries. Every numerical step is paired with a validation test so that the final results remain interpretable and defensible.
+> How do interaction strength and temperature affect physical thermalisation in a finite Fermi–Hubbard system, and how does that difficulty compare with the polynomial complexity of preparing the same Gibbs state algorithmically?
 
-## Research question
+The full study is reproducible in GitHub Actions and is built around a two-site spinful Hubbard model with four fermionic modes.
 
-> How do interaction strength and temperature affect thermalisation in a finite Fermi–Hubbard system, and how does the difficulty of physical relaxation compare with the difficulty of algorithmically preparing the same Gibbs state?
+## Headline result
 
-## Current milestone — 09: Physical vs algorithmic thermalisation
+Across the finite parameter grid, physical and algorithmic thermal difficulty move together, but they are controlled by different structures.
 
-Milestones 01–08 established the two-site Fermi–Hubbard model, its finite-temperature and open-system physics, Liouvillian-gap analysis, exact four-qubit Pauli representation, Hamiltonian simulation, LCU block encoding, and a bounded thermal-polynomial approximation. Milestone 09 compares the physical relaxation metrics and algorithmic polynomial degree on the same half-filled Gibbs target.
+For the open-system route, the mixing time is tightly organized by the Liouvillian gap:
+
+```text
+t_mix ≈ 3.751 * (1 / Delta_L)^1.0398
+R^2   = 0.9897
+```
+
+For the algorithmic route, define `d_G` as the **minimum bounded Chebyshev degree** whose half-filled Gibbs state reaches trace distance `1e-2`.
+
+Across 20 common `U/t x beta t` cases:
+
+```text
+t_mix vs d_G
+Pearson r    = 0.708
+Spearman rho = 0.806
+
+1 / Delta_L vs d_G
+Pearson r    = 0.714
+Spearman rho = 0.813
+
+beta * alpha vs d_G
+Pearson r    = 0.998
+Spearman rho = 0.989
+```
+
+So the two notions of difficulty show clear trend alignment in this finite model, while the algorithmic degree is much more directly controlled by the thermal steepness parameter `beta * alpha`.
+
+See **[RESULTS.md](RESULTS.md)** for the full interpretation and limitations.
+
+## Physics model
 
 Mode ordering:
 
@@ -34,243 +62,166 @@ H = -t sum_sigma (c^†_{0,sigma} c_{1,sigma} + h.c.)
     - mu sum_{i,sigma} n_{i,sigma}.
 ```
 
-The fermionic operators are constructed explicitly with the Jordan–Wigner parity string. The model is validated through canonical anti-commutation relations, Hermiticity, particle-number conservation, and the six-dimensional half-filled sector. The thermal state is then constructed as `rho_beta = exp(-beta H) / Z` inside that fixed-particle-number sector.
+The full Fock space has dimension 16. Physical thermalisation is studied in the six-dimensional half-filled `N=2` sector.
 
-### Run the checks
+## Research pipeline
+
+```text
+Fermi-Hubbard Hamiltonian
+        |
+        v
+canonical Gibbs states
+        |
+        v
+detailed-balance Lindblad dynamics
+        |
+        v
+Liouvillian gap + mixing time
+        |
+        +----------------------------+
+        |                            |
+        v                            v
+Jordan-Wigner mapping          physical difficulty
+        |
+        v
+Pauli Hamiltonian
+        |
+        v
+Hamiltonian simulation
+        |
+        v
+LCU block encoding H/alpha
+        |
+        v
+bounded thermal polynomial
+        |
+        v
+sector-conditioned Gibbs state
+        |
+        v
+algorithmic difficulty d_G
+        |
+        +------------ compare ------------+
+```
+
+## Key validations
+
+### Fermion-to-qubit mapping
+
+The analytic Jordan–Wigner Pauli decomposition is checked independently using Hilbert–Schmidt Pauli coefficients. The dense fermionic and qubit Hamiltonians agree numerically, including their spectra.
+
+### Hamiltonian simulation
+
+For `U/t=4` and `tau t=1.5`, the fitted product-formula convergence exponents are
+
+```text
+first order  = -1.013
+second order = -2.009
+```
+
+consistent with the expected `O(1/r)` and `O(1/r^2)` behavior.
+
+### LCU block encoding
+
+At `U/t=4`, the Hamiltonian has 11 nonzero Pauli terms and
+
+```text
+alpha = sum_j |alpha_j| = 10.
+```
+
+The dense PREPARE/SELECT construction verifies
+
+```text
+(<0| tensor I) U_H (|0> tensor I) = H / alpha
+```
+
+with top-left-block operator error approximately `3.5e-16`.
+
+### Thermal polynomial
+
+The block encoding supplies `X = H/alpha` with spectrum in `[-1,1]`. The bounded target is
+
+```text
+f(x) = exp[-beta alpha (x + 1)/2].
+```
+
+Because
+
+```text
+f(H/alpha)
+= exp[-beta alpha/2] exp[-beta H/2],
+```
+
+the scalar shift cancels after the amplitude operator is squared and normalized into a Gibbs state.
+
+The Chebyshev series is split into even and odd parity components for QSVT-oriented synthesis. **Explicit QSP phase synthesis is not claimed.**
+
+## A methodological result
+
+A fixed uniform scalar approximation error was not sufficient at every cold/high-`U` point.
+
+For example:
+
+```text
+U/t=6, beta t=2
+degree at scalar error 1e-4: 15
+half-filled Gibbs error:     0.379
+```
+
+When the algorithmic criterion is changed to the quantity that actually matters,
+
+```text
+D(rho_poly, rho_beta) <= 1e-2,
+```
+
+the required degree becomes 22.
+
+This is why the final comparison uses the state-targeted degree `d_G`, not just a uniform scalar-function tolerance.
+
+## Reproduce
+
+Install dependencies and run the validation suite:
 
 ```bash
 pip install -r requirements.txt
-pytest -q
+python -m pytest -q
 ```
 
-### Run the notebook
+Run the complete research pipeline:
 
-Start with:
-
-```text
-notebooks/01_fermi_hubbard_foundations.ipynb
-notebooks/02_gibbs_states_and_thermal_observables.ipynb
+```bash
+python experiments/run_thermal_sweep.py
+python experiments/run_thermalisation_demo.py
+python experiments/run_spectral_gap_sweep.py
+python experiments/run_jordan_wigner_mapping.py
+python experiments/run_hamiltonian_simulation.py
+python experiments/run_block_encoding.py
+python experiments/run_thermal_polynomial_qsvt.py
+python experiments/run_physical_algorithmic_comparison.py
 ```
 
-Notebook 01 constructs and validates the fermionic model. Notebook 02 builds exact Gibbs states in the half-filled sector and studies thermal energy, von Neumann entropy, average double occupancy, and nearest-neighbour spin-z correlations across `U/t` and `beta t`.
-
-## Planned research path
-
-```text
-Fermi-Hubbard foundations
-        ↓
-thermal observables and Gibbs states
-        ↓
-thermal Lindblad dynamics
-        ↓
-Liouvillian spectrum and mixing time
-        ↓
-Jordan-Wigner / Pauli representation
-        ↓
-Hamiltonian simulation
-        ↓
-block encoding
-        ↓
-polynomial / QSVT-oriented Gibbs preparation
-        ↓
-physical vs algorithmic thermalisation
-```
-
-The project will remain explicit about finite-size limitations. Small-system numerical evidence will not be presented as an asymptotic many-body result.
+GitHub Actions also provides a `research-results` workflow that executes the pipeline from a clean environment and uploads generated CSV, JSON, and PNG outputs.
 
 ## Repository structure
 
 ```text
 HubbardBath/
-├── notebooks/      # derivations and reproducible experiments
-├── src/            # reusable numerical code
+├── experiments/    # reproducible experiment entry points
+├── notebooks/      # milestone derivations and exploratory analyses
+├── notes/          # modelling assumptions and technical derivations
+├── src/            # reusable numerical implementation
 ├── tests/          # algebraic and numerical validation
-├── figures/        # publication-quality figures
-├── results/        # experiment outputs
-└── paper/          # technical report as the project matures
+├── figures/        # generated research figures
+├── results/        # generated/snapshotted results
+└── paper/          # report workspace
 ```
 
-## Compute strategy
+## Scope and limitations
 
-Early milestones use exact NumPy/SciPy calculations because the two-site system is tiny and exact methods make validation easy. Larger open-system simulations will move to symmetry reduction, sparse operators, Krylov evolution, and GPU acceleration only when the system size makes those methods necessary.
+This is a **finite two-site reference study**.
 
+The physical relaxation results depend on the chosen Davies-inspired bath couplings, rate scale, initial state, and mixing threshold. The polynomial degree depends on the Jordan–Wigner/LCU representation, normalization `alpha`, target state error, and approximation strategy.
 
-### Milestone 02 reproducible sweep
+The dense block encoding is a correctness construction, not an optimized fault-tolerant implementation. Polynomial degree is a query/approximation proxy, not a logical T-count or circuit-depth estimate. Explicit QSP phase synthesis remains future work.
 
-```bash
-python experiments/run_thermal_sweep.py
-```
-
-This generates a CSV over the `U/t × beta t` grid and four heatmaps in `figures/`. These equilibrium maps will be the reference state for the upcoming open-system thermalisation milestone.
-
-
-### Milestone 03 open-system demonstration
-
-```bash
-python experiments/run_thermalisation_demo.py
-```
-
-The reference experiment starts from a doublon state at `U/t = 4` and `beta t = 1`, constructs a detailed-balance Lindbladian, verifies `||L(rho_beta)|| ≈ 0`, and tracks trace distance plus Hubbard observables as the system relaxes toward equilibrium. See `notes/03_open_system_thermalisation.md` for the modelling assumptions and validation targets.
-
-
-### Milestone 04 spectral-gap sweep
-
-```bash
-python experiments/run_spectral_gap_sweep.py
-```
-
-The default exact grid contains 30 two-site cases across `U/t` and `beta t`. For each case it computes the Liouvillian gap, inverse gap, persistent trace-distance mixing time, stationary-mode count, and `Delta_L * t_mix`. It also performs a descriptive log-log fit of mixing time versus inverse gap. This fit is explicitly treated as a finite-grid diagnostic, not an asymptotic many-body scaling law.
-
-See:
-
-```text
-notebooks/04_liouvillian_gap_vs_mixing.ipynb
-notes/04_liouvillian_gap_and_mixing.md
-```
-
-
-### Milestone 05 Jordan–Wigner mapping
-
-```bash
-python experiments/run_jordan_wigner_mapping.py
-```
-
-The two-site, four-mode Hubbard Hamiltonian is written as
-
-```text
-H = sum_j alpha_j P_j
-```
-
-with explicit Jordan–Wigner parity strings. The analytic Pauli coefficients are independently checked using the Hilbert–Schmidt Pauli decomposition, the reconstructed qubit Hamiltonian is compared directly against the fermionic matrix, and the spectra are required to agree to numerical precision.
-
-Milestone 05 also records
-
-```text
-alpha = sum_j |alpha_j|
-```
-
-which becomes the LCU normalization used later in the block-encoding milestone.
-
-See:
-
-```text
-notebooks/05_jordan_wigner_to_qubits.ipynb
-notes/05_jordan_wigner_mapping.md
-```
-
-
-### Milestone 06 Hamiltonian simulation
-
-```bash
-python experiments/run_hamiltonian_simulation.py
-```
-
-The benchmark compares exact `exp(-i H tau)` with first-order Lie–Trotter and second-order symmetric product formulas across increasing Trotter step counts. It records operator-norm error, doublon-state infidelity, fitted convergence exponents, and a simple Pauli-exponential resource proxy.
-
-See:
-
-```text
-notebooks/06_hamiltonian_simulation.ipynb
-notes/06_hamiltonian_simulation.md
-```
-
-The next milestone reuses the same Pauli coefficients to build an explicit LCU/block encoding of `H/alpha`.
-
-
-### Milestone 07 LCU block encoding
-
-```bash
-python experiments/run_block_encoding.py
-```
-
-For
-
-```text
-H = sum_j alpha_j P_j
-alpha = sum_j |alpha_j|
-```
-
-the milestone constructs PREPARE and SELECT and verifies
-
-```text
-(<0| tensor I) U_H (|0> tensor I) = H / alpha.
-```
-
-For the reference `U/t = 4` Hamiltonian, the decomposition has 11 nonzero Pauli terms, uses four ancilla label qubits in the dense reference construction, and has `alpha = 10`. The code checks PREPARE normalization, SELECT unitarity, full block-encoding unitarity, top-left-block error, and the projected action on the doublon state.
-
-See:
-
-```text
-notebooks/07_lcu_block_encoding.ipynb
-notes/07_block_encoding.md
-```
-
-The next milestone connects this normalized matrix access to bounded polynomial approximation of thermal matrix functions and the QSVT framework.
-
-
-### Milestone 08 bounded thermal polynomial / QSVT readiness
-
-```bash
-python experiments/run_thermal_polynomial_qsvt.py
-```
-
-The block encoding supplies `X = H/alpha` with spectrum inside `[-1,1]`. To keep the thermal target bounded on that full interval, this milestone uses
-
-```text
-f(x) = exp[- beta alpha (x + 1) / 2].
-```
-
-At the matrix level,
-
-```text
-f(H/alpha)
-= exp[-beta alpha/2] exp[-beta H/2].
-```
-
-The scalar prefactor cancels when the squared amplitude operator is normalized into a Gibbs state.
-
-The experiment measures minimum Chebyshev degree versus `beta`, `U/t`, `alpha`, and target error; verifies the matrix polynomial directly; measures Gibbs-state trace-distance error; and separates the Chebyshev series into even/odd parity components required by standard QSP/QSVT synthesis.
-
-Explicit QSP phase angles and a compiled fault-tolerant QSVT circuit are **not** claimed by this milestone.
-
-See:
-
-```text
-notebooks/08_thermal_polynomial_qsvt.ipynb
-notes/08_thermal_polynomial_qsvt.md
-```
-
-
-### Milestone 09 physical vs algorithmic comparison
-
-```bash
-python experiments/run_physical_algorithmic_comparison.py
-```
-
-The comparison uses the common grid
-
-```text
-U/t    = 0, 2, 4, 6, 8
-beta t = 0.25, 0.5, 1, 2
-```
-
-and records, for each point:
-
-- Liouvillian spectral gap and inverse gap;
-- persistent trace-distance mixing time;
-- LCU normalization alpha;
-- minimum bounded thermal-polynomial degree at scalar error 1e-4;
-- half-filled Gibbs-state error of the polynomial route.
-
-A consistency correction is applied before the comparison: the polynomial acts on the full four-qubit Hamiltonian, but its thermal state is projected and renormalized in the same N=2 sector used by the open-system analysis.
-
-The milestone reports overall Pearson/Spearman correlations plus correlations at fixed beta and fixed U so that a shared temperature trend is not mistaken for a deeper relationship.
-
-See:
-
-```text
-notebooks/09_physical_vs_algorithmic.ipynb
-notes/09_physical_vs_algorithmic.md
-```
-
-All comparisons are finite-system and model-dependent. Mixing time depends on the chosen bath and rate scale; polynomial degree is not a compiled fault-tolerant gate count.
+The goal is therefore not to claim a universal relation between Lindbladian mixing and QSVT complexity, but to make the two routes concrete, testable, and directly comparable in one controlled model.
