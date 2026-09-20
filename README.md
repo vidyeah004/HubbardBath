@@ -154,7 +154,7 @@ f(H/alpha)
 
 the scalar shift cancels after the amplitude operator is squared and normalized into a Gibbs state.
 
-The Chebyshev series is split into even and odd parity components for QSVT-oriented synthesis. **Explicit QSP phase synthesis is not claimed.**
+The Chebyshev series is split into even and odd parity components. Milestone 10 synthesizes explicit symmetric-QSP phase sequences for both components and independently reconstructs their signal responses from the returned phases.
 
 ## A methodological result
 
@@ -198,6 +198,7 @@ python experiments/run_hamiltonian_simulation.py
 python experiments/run_block_encoding.py
 python experiments/run_thermal_polynomial_qsvt.py
 python experiments/run_physical_algorithmic_comparison.py
+python experiments/run_qsp_phase_synthesis.py
 ```
 
 GitHub Actions also provides a `research-results` workflow that executes the pipeline from a clean environment and uploads generated CSV, JSON, and PNG outputs.
@@ -222,6 +223,33 @@ This is a **finite two-site reference study**.
 
 The physical relaxation results depend on the chosen Davies-inspired bath couplings, rate scale, initial state, and mixing threshold. The polynomial degree depends on the Jordan–Wigner/LCU representation, normalization `alpha`, target state error, and approximation strategy.
 
-The dense block encoding is a correctness construction, not an optimized fault-tolerant implementation. Polynomial degree is a query/approximation proxy, not a logical T-count or circuit-depth estimate. Explicit QSP phase synthesis remains future work.
+The dense block encoding is a correctness construction, not an optimized fault-tolerant implementation. Polynomial degree is a query/approximation proxy, not a logical T-count or circuit-depth estimate. Explicit symmetric-QSP phases are synthesized for the even and odd thermal-polynomial components, but their coherent ancilla/LCU combination is not yet compiled into a complete fault-tolerant QSVT Gibbs-preparation circuit.
 
 The goal is therefore not to claim a universal relation between Lindbladian mixing and QSVT complexity, but to make the two routes concrete, testable, and directly comparable in one controlled model.
+
+
+## Explicit QSP phase synthesis
+
+Milestone 10 uses `pyqsp==0.2.0` to synthesize symmetric-QSP phases for the definite-parity components of the reference thermal polynomial.
+
+The returned phases are not accepted on solver convergence alone. HubbardBath independently reconstructs
+
+```text
+U_QSP(x) = S(phi_0) W(x) S(phi_1) ... W(x) S(phi_d)
+```
+
+and verifies the signal response
+
+```text
+Im <0| U_QSP(x) |0>
+```
+
+against each target Chebyshev component on a dense `[-1,1]` grid. The summed even/odd responses are then checked against the original thermal polynomial.
+
+Run:
+
+```bash
+python experiments/run_qsp_phase_synthesis.py
+```
+
+Generated phase angles are written to `results/milestone10_qsp_phases.csv`. See `notebooks/10_explicit_qsp_phase_synthesis.ipynb` and `notes/10_qsp_phase_synthesis.md`.
