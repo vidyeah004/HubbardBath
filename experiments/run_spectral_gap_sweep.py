@@ -117,7 +117,7 @@ def main() -> None:
         linestyle="--",
         label=fr"log-log fit, exponent={fit['exponent']:.3f}",
     )
-    plt.xlabel(r"Inverse Liouvillian gap $1/\Delta_{\mathcal L}$")
+    plt.xlabel(r"Inverse Liouvillian gap $1/\Delta_{\mathcal{L}}$")
     plt.ylabel(r"Mixing time $t_{\mathrm{mix}}$")
     plt.title("Finite-system gap versus thermal mixing time")
     plt.legend()
@@ -141,7 +141,7 @@ def main() -> None:
     for data, title, filename in [
         (
             gap_grid,
-            r"Liouvillian spectral gap $\Delta_{\mathcal L}$",
+            r"Liouvillian spectral gap $\Delta_{\mathcal{L}}$",
             "milestone04_gap_heatmap.png",
         ),
         (

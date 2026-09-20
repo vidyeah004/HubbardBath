@@ -120,7 +120,7 @@ def main() -> None:
             label=fr"$\beta t={beta}$",
         )
     plt.xlabel("Minimum bounded thermal-polynomial degree")
-    plt.ylabel(r"Inverse Liouvillian gap $1/\Delta_{\mathcal L}$")
+    plt.ylabel(r"Inverse Liouvillian gap $1/\Delta_{\mathcal{L}}$")
     plt.title("Spectral relaxation scale vs polynomial degree")
     plt.legend()
     plt.grid(alpha=0.2)
