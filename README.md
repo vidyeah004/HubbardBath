@@ -13,9 +13,9 @@ The project is intentionally built from first principles before using higher-lev
 
 > How do interaction strength and temperature affect thermalisation in a finite Fermi–Hubbard system, and how does the difficulty of physical relaxation compare with the difficulty of algorithmically preparing the same Gibbs state?
 
-## Current milestone — 02: Gibbs states and thermal observables
+## Current milestone — 03: Open-system thermalisation
 
-Milestone 01 established and validated the two-site spinful Fermi–Hubbard model. Milestone 02 adds the finite-temperature canonical ensemble in the half-filled (two-electron) sector and measures how equilibrium observables change across interaction strength and temperature.
+Milestones 01–02 established the two-site spinful Fermi–Hubbard model and its exact finite-temperature Gibbs states in the half-filled sector. Milestone 03 now couples that validated system to a number-conserving thermal bath and follows non-equilibrium relaxation under Lindblad dynamics.
 
 Mode ordering:
 
@@ -102,3 +102,12 @@ python experiments/run_thermal_sweep.py
 ```
 
 This generates a CSV over the `U/t × beta t` grid and four heatmaps in `figures/`. These equilibrium maps will be the reference state for the upcoming open-system thermalisation milestone.
+
+
+### Milestone 03 open-system demonstration
+
+```bash
+python experiments/run_thermalisation_demo.py
+```
+
+The reference experiment starts from a doublon state at `U/t = 4` and `beta t = 1`, constructs a detailed-balance Lindbladian, verifies `||L(rho_beta)|| ≈ 0`, and tracks trace distance plus Hubbard observables as the system relaxes toward equilibrium. See `notes/03_open_system_thermalisation.md` for the modelling assumptions and validation targets.
