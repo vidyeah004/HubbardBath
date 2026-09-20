@@ -17,8 +17,8 @@ Across the finite parameter grid, physical and algorithmic thermal difficulty mo
 For the open-system route, the mixing time is tightly organized by the Liouvillian gap:
 
 ```text
-t_mix ≈ 3.751 * (1 / Delta_L)^1.0398
-R^2   = 0.9897
+t_mix ≈ 3.733 * (1 / Delta_L)^1.0397
+R^2   = 0.9858
 ```
 
 For the algorithmic route, define `d_G` as the **minimum bounded Chebyshev degree** whose half-filled Gibbs state reaches trace distance `1e-2`.
@@ -27,12 +27,12 @@ Across 20 common `U/t x beta t` cases:
 
 ```text
 t_mix vs d_G
-Pearson r    = 0.708
-Spearman rho = 0.806
+Pearson r    = 0.703
+Spearman rho = 0.802
 
 1 / Delta_L vs d_G
-Pearson r    = 0.714
-Spearman rho = 0.813
+Pearson r    = 0.707
+Spearman rho = 0.809
 
 beta * alpha vs d_G
 Pearson r    = 0.998
@@ -103,6 +103,20 @@ algorithmic difficulty d_G
         |
         +------------ compare ------------+
 ```
+
+
+
+### Degeneracy-safe Davies construction
+
+The open-system generator uses spectral projectors rather than individual numerical eigenvectors. For each Hermitian bath coupling,
+
+```text
+A(omega) = sum_{E_high-E_low=omega} Pi_low A Pi_high
+```
+
+with all transitions sharing a Bohr frequency aggregated before entering the dissipator. The zero-frequency block retains the full action within degenerate eigenspaces. This makes the reference bath invariant under arbitrary eigenbasis rotations inside exact degeneracies.
+
+The entire M4/M9 pipeline was rerun after this correction. The headline exponents and correlations changed only slightly, so the qualitative conclusion is robust to this methodology hardening. See `notes/11_davies_projector_hardening.md`.
 
 ## Key validations
 
@@ -221,7 +235,7 @@ HubbardBath/
 
 This is a **finite two-site reference study**.
 
-The physical relaxation results depend on the chosen Davies-inspired bath couplings, rate scale, initial state, and mixing threshold. The polynomial degree depends on the Jordan–Wigner/LCU representation, normalization `alpha`, target state error, and approximation strategy.
+The physical relaxation results depend on the chosen projector-based Davies reference-bath couplings, rate scale, initial state, and mixing threshold. The polynomial degree depends on the Jordan–Wigner/LCU representation, normalization `alpha`, target state error, and approximation strategy.
 
 The dense block encoding is a correctness construction, not an optimized fault-tolerant implementation. Polynomial degree is a query/approximation proxy, not a logical T-count or circuit-depth estimate. Explicit symmetric-QSP phases are synthesized for the even and odd thermal-polynomial components, but their coherent ancilla/LCU combination is not yet compiled into a complete fault-tolerant QSVT Gibbs-preparation circuit.
 
