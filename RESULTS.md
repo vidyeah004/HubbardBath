@@ -1,6 +1,6 @@
 # HubbardBath — Results and Discussion
 
-This document records the reproduced numerical results of the finite-system HubbardBath study. All headline results below were regenerated from clean GitHub Actions runs; the explicit QSP synthesis extension was reproduced on commit `a5f358b6df087dd520f885583244f2589cbf74ea`.
+This document records the reproduced numerical results of the finite-system HubbardBath study. All headline results below were regenerated from a clean GitHub Actions run after the degeneracy-safe Davies correction on commit `1e70cac3cab184450f2c0aa7cd9d493a29adff8a`.
 
 ## Research question
 
@@ -18,13 +18,13 @@ The calculation is exact for a two-site, four-mode model. The full Fock space ha
 Across 30 `U/t x beta t` cases, the fitted finite-grid relation was
 
 ```text
-t_mix = 3.751 * (1 / Delta_L)^1.0398
-R^2   = 0.9897
+t_mix = 3.733 * (1 / Delta_L)^1.0397
+R^2   = 0.9858
 ```
 
 and `Delta_L * t_mix` stayed between 3.3 and 4.6.
 
-This is a strong finite-model result: for the chosen Davies-inspired bath and the doublon initial state, the slowest Liouvillian decay scale almost completely organizes the observed mixing time.
+This is a strong finite-model result: for the chosen projector-based Davies reference bath and the doublon initial state, the slowest Liouvillian decay scale almost completely organizes the observed mixing time.
 
 This should **not** be read as a thermodynamic-limit theorem. The gap, mixing time, and prefactor depend on the bath construction, rate scale, initial state, tolerance, and system size.
 
@@ -115,12 +115,12 @@ Using the same 20 `U/t x beta t` cases and the same `1e-2` trace-distance accura
 
 ```text
 t_mix vs d_G:
-Pearson r    = 0.7084
-Spearman rho = 0.8056
+Pearson r    = 0.7035
+Spearman rho = 0.8018
 
 1 / Delta_L vs d_G:
-Pearson r    = 0.7135
-Spearman rho = 0.8132
+Pearson r    = 0.7074
+Spearman rho = 0.8094
 ```
 
 So, within this controlled finite model, parameter points that are physically slower to thermalise also tend to require higher-degree thermal polynomials.
@@ -135,10 +135,10 @@ The overall correlation is not only a trivial consequence of varying temperature
 
 | beta t | Pearson r |
 | ---: | ---: |
-| 0.25 | 0.913 |
-| 0.50 | 0.953 |
-| 1.00 | 0.985 |
-| 2.00 | 0.975 |
+| 0.25 | 0.907 |
+| 0.50 | 0.934 |
+| 1.00 | 0.961 |
+| 2.00 | 0.939 |
 
 Each slice contains only five interaction values, so these numbers should be treated descriptively. Still, they show that increasing `U/t` makes both the selected physical bath dynamics and the thermal-polynomial task harder over this grid.
 
@@ -168,13 +168,13 @@ Because the thermal polynomial has mixed parity, its even and odd Chebyshev comp
 even component:
 degree                 = 8
 full QSP phase count   = 9
-solver residual        = 1.17e-16
-signal-response error  = 3.89e-16
+solver residual        = 6.74e-17
+signal-response error  = 2.78e-16
 
 odd component:
 degree                 = 7
 full QSP phase count   = 8
-solver residual        = 1.33e-16
+solver residual        = 1.40e-16
 signal-response error  = 3.33e-16
 ```
 
@@ -183,19 +183,50 @@ HubbardBath independently reconstructs the `Wx`-convention QSP matrix product fr
 The sum of the independently reconstructed even and odd QSP responses matches the original thermal polynomial with maximum error
 
 ```text
-6.66e-16.
+5.55e-16.
 ```
 
 This supports the stronger statement that the project contains **explicit, numerically validated QSP phase synthesis** for the parity-resolved thermal transformation.
 
 The remaining circuit-level step is to combine the two parity sequences coherently, for example through an ancilla/LCU construction, and then compile that construction into a full QSVT Gibbs-preparation circuit. That step is not claimed here.
 
+## Methodology hardening: exact degeneracies
+
+An earlier version of the reference bath formed separate jumps from individual
+energy eigenvectors. Because the Hubbard spectrum contains exact degeneracies,
+that construction could depend on the arbitrary eigenvector basis selected
+inside a degenerate eigenspace.
+
+The final implementation instead constructs spectral projectors `Pi_E` and
+basis-invariant Bohr-frequency components
+
+```text
+A_a(omega)
+= sum_{E_high-E_low=omega}
+  Pi_low A_a Pi_high.
+```
+
+All contributions at the same Bohr frequency are grouped per physical coupling,
+and the complete zero-frequency block `sum_E Pi_E A_a Pi_E` is retained.
+Upward and downward rates satisfy the KMS ratio
+`gamma_up/gamma_down = exp(-beta omega)`.
+
+After this correction, the complete M4/M9 pipeline was rerun. The original
+qualitative result survives: the inverse Liouvillian gap remains an excellent
+organizer of physical mixing, while the physical-vs-algorithmic association
+remains positive and the algorithmic degree remains overwhelmingly tied to
+`beta * alpha`.
+
+This robustness rerun is important: the headline comparison is not being
+driven by an arbitrary choice of numerical eigenvectors inside degenerate
+subspaces.
+
 ## Interpretation limits
 
 The study is intentionally small and explicit.
 
 - It is a two-site finite system, not a thermodynamic-limit calculation.
-- The physical mixing scale is specific to the chosen Davies-inspired coupling operators, rate scale `0.2`, doublon initial state, and trace-distance threshold.
+- The physical mixing scale is specific to the chosen projector-based Davies reference-bath coupling operators, rate scale `0.2`, doublon initial state, and trace-distance threshold.
 - The LCU normalization depends on the chosen Pauli representation.
 - `d_G` is a polynomial/query-complexity proxy, not a logical T-count or compiled circuit depth.
 - The project synthesizes and independently validates explicit symmetric-QSP phases for the even and odd thermal-polynomial components. It does not claim a fully compiled coherent or fault-tolerant QSVT Gibbs-preparation circuit.

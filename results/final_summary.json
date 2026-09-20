@@ -1,6 +1,6 @@
 {
   "reproduced_on": "2026-09-20",
-  "source_commit": "a5f358b6df087dd520f885583244f2589cbf74ea",
+  "source_commit": "1e70cac3cab184450f2c0aa7cd9d493a29adff8a",
   "system": {
     "model": "two-site spinful Fermi-Hubbard",
     "fermionic_modes": 4,
@@ -13,9 +13,9 @@
     "trace_distance_mixing_tolerance": 0.01,
     "bath_rate_scale": 0.2,
     "fit": "t_mix = A * (1 / Delta_L)^p",
-    "exponent_p": 1.0398463761717918,
-    "prefactor_A": 3.751372827265397,
-    "loglog_r_squared": 0.9897161753798119,
+    "exponent_p": 1.0396717367171984,
+    "prefactor_A": 3.733064006153586,
+    "loglog_r_squared": 0.9858147269071041,
     "Delta_L_times_t_mix_range": [
       3.3,
       4.6
@@ -59,12 +59,12 @@
       28
     ],
     "mixing_time_vs_state_targeted_degree": {
-      "pearson_r": 0.7084461516095373,
-      "spearman_rho": 0.805612330278577
+      "pearson_r": 0.7034834350620314,
+      "spearman_rho": 0.801830112765532
     },
     "inverse_gap_vs_state_targeted_degree": {
-      "pearson_r": 0.713539543972979,
-      "spearman_rho": 0.8131767653046669
+      "pearson_r": 0.7074046092444572,
+      "spearman_rho": 0.809394547791622
     },
     "beta_alpha_vs_state_targeted_degree": {
       "pearson_r": 0.9981729623183512,
@@ -73,7 +73,7 @@
   },
   "interpretation_limits": [
     "finite two-site model",
-    "physical mixing depends on the chosen Davies-inspired bath, rate scale, and initial state",
+    "physical mixing depends on the chosen projector-based Davies reference bath, rate scale, and initial state",
     "polynomial degree is an approximation/query-complexity proxy, not a compiled logical gate count",
     "explicit QSP phases are validated for separate even/odd components; a coherent full QSVT circuit is not claimed",
     "correlations describe this deterministic finite parameter grid and are not universal statistical laws"
@@ -87,16 +87,24 @@
     "even_component": {
       "degree": 8,
       "full_phase_count": 9,
-      "solver_residual": 1.1676857397668883e-16,
-      "max_signal_reconstruction_error": 3.885780586188048e-16
+      "solver_residual": 6.743737512859838e-17,
+      "max_signal_reconstruction_error": 2.7755575615628914e-16
     },
     "odd_component": {
       "degree": 7,
       "full_phase_count": 8,
-      "solver_residual": 1.3314002678121994e-16,
+      "solver_residual": 1.4007892068512717e-16,
       "max_signal_reconstruction_error": 3.3306690738754696e-16
     },
-    "summed_even_odd_qsp_response_error": 6.661338147750939e-16,
+    "summed_even_odd_qsp_response_error": 5.551115123125783e-16,
     "full_coherent_qsvt_circuit_completed": false
+  },
+  "methodology_hardening": {
+    "degeneracy_safe_davies_generator": true,
+    "construction": "spectral projectors with Bohr-frequency aggregation per Hermitian system coupling",
+    "zero_frequency_block_preserved": true,
+    "kms_ratio": "gamma_up/gamma_down = exp(-beta*omega)",
+    "full_M4_M9_rerun_completed": true,
+    "robustness_conclusion": "headline physical and physical-vs-algorithmic trends survive with only small numerical changes"
   }
 }
