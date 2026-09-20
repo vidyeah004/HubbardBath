@@ -13,9 +13,9 @@ The project is intentionally built from first principles before using higher-lev
 
 > How do interaction strength and temperature affect thermalisation in a finite Fermi–Hubbard system, and how does the difficulty of physical relaxation compare with the difficulty of algorithmically preparing the same Gibbs state?
 
-## Current milestone — 05: Jordan–Wigner fermion-to-qubit mapping
+## Current milestone — 06: Hamiltonian simulation
 
-Milestones 01–04 established the two-site spinful Fermi–Hubbard model, its finite-temperature Gibbs states, a validated detailed-balance Lindblad model, and a spectral-gap versus mixing-time research sweep. Milestone 05 begins the quantum-algorithm half of the project by rewriting the same fermionic Hamiltonian as an explicit four-qubit Pauli sum and verifying exact equivalence.
+Milestones 01–05 established the two-site Fermi–Hubbard model, its finite-temperature and open-system physics, the Liouvillian-gap analysis, and an exact four-qubit Pauli representation. Milestone 06 uses that Pauli Hamiltonian for real-time simulation and benchmarks first- and second-order product formulas against exact evolution.
 
 Mode ordering:
 
@@ -157,3 +157,21 @@ See:
 notebooks/05_jordan_wigner_to_qubits.ipynb
 notes/05_jordan_wigner_mapping.md
 ```
+
+
+### Milestone 06 Hamiltonian simulation
+
+```bash
+python experiments/run_hamiltonian_simulation.py
+```
+
+The benchmark compares exact `exp(-i H tau)` with first-order Lie–Trotter and second-order symmetric product formulas across increasing Trotter step counts. It records operator-norm error, doublon-state infidelity, fitted convergence exponents, and a simple Pauli-exponential resource proxy.
+
+See:
+
+```text
+notebooks/06_hamiltonian_simulation.ipynb
+notes/06_hamiltonian_simulation.md
+```
+
+The next milestone reuses the same Pauli coefficients to build an explicit LCU/block encoding of `H/alpha`.
