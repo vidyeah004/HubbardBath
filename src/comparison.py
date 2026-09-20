@@ -38,6 +38,7 @@ from src.qubit_mapping import (
 from src.spectral import stationary_mode_count, thermalisation_metrics
 from src.thermal_polynomial import (
     minimum_degree_for_error,
+    minimum_degree_for_sector_gibbs_error,
     sector_gibbs_trace_distance_error,
 )
 
@@ -48,6 +49,7 @@ def comparison_case(
     *,
     physical_epsilon: float = 1e-2,
     algorithmic_epsilon: float = 1e-4,
+    algorithmic_gibbs_epsilon: float = 1e-2,
     rate_scale: float = 0.2,
     horizon_in_inverse_gaps: float = 12.0,
     num_time_points: int = 241,
@@ -114,10 +116,22 @@ def comparison_case(
         particle_number=2,
     )
 
+    state_polynomial, state_gibbs_error = (
+        minimum_degree_for_sector_gibbs_error(
+            h_full,
+            beta=float(beta),
+            alpha=alpha,
+            target_trace_distance=algorithmic_gibbs_epsilon,
+            num_modes=4,
+            particle_number=2,
+            max_degree=max_polynomial_degree,
+        )
+    )
+
     comparison_valid = (
         stationary_modes == 1
         and np.isfinite(physical["mixing_time"])
-        and sector_gibbs_error < 5e-2
+        and state_gibbs_error <= algorithmic_gibbs_epsilon
     )
 
     return {
@@ -125,6 +139,7 @@ def comparison_case(
         "beta_t": float(beta),
         "physical_epsilon": float(physical_epsilon),
         "algorithmic_scalar_epsilon": float(algorithmic_epsilon),
+        "algorithmic_gibbs_epsilon": float(algorithmic_gibbs_epsilon),
         "bath_rate_scale": float(rate_scale),
         "number_of_jump_operators": int(len(jumps)),
         "stationary_mode_count": int(stationary_modes),
@@ -146,6 +161,18 @@ def comparison_case(
         ),
         "half_filled_gibbs_trace_distance": float(
             sector_gibbs_error
+        ),
+        "state_targeted_polynomial_degree": int(
+            state_polynomial.degree
+        ),
+        "state_targeted_scalar_error": float(
+            state_polynomial.max_scalar_error
+        ),
+        "state_targeted_gibbs_trace_distance": float(
+            state_gibbs_error
+        ),
+        "degree_increase_for_state_target": int(
+            state_polynomial.degree - polynomial.degree
         ),
         "comparison_valid": bool(comparison_valid),
     }
@@ -257,33 +284,43 @@ def comparison_summary(
     return {
         "total_cases": len(rows),
         "valid_cases": len(valid_rows),
-        "mixing_time_vs_degree": correlation_summary(
+        "mixing_time_vs_state_targeted_degree": correlation_summary(
+            rows,
+            "mixing_time",
+            "state_targeted_polynomial_degree",
+        ),
+        "inverse_gap_vs_state_targeted_degree": correlation_summary(
+            rows,
+            "inverse_liouvillian_gap",
+            "state_targeted_polynomial_degree",
+        ),
+        "beta_alpha_vs_state_targeted_degree": correlation_summary(
+            rows,
+            "beta_alpha",
+            "state_targeted_polynomial_degree",
+        ),
+        "uniform_scalar_mixing_time_vs_degree": correlation_summary(
             rows,
             "mixing_time",
             "thermal_polynomial_degree",
         ),
-        "inverse_gap_vs_degree": correlation_summary(
+        "uniform_scalar_inverse_gap_vs_degree": correlation_summary(
             rows,
             "inverse_liouvillian_gap",
             "thermal_polynomial_degree",
         ),
-        "beta_alpha_vs_degree": correlation_summary(
-            rows,
-            "beta_alpha",
-            "thermal_polynomial_degree",
-        ),
-        "within_beta_mixing_vs_degree":
+        "within_beta_mixing_vs_state_targeted_degree":
             stratified_correlation_summaries(
                 rows,
                 "beta_t",
                 "mixing_time",
-                "thermal_polynomial_degree",
+                "state_targeted_polynomial_degree",
             ),
-        "within_U_mixing_vs_degree":
+        "within_U_mixing_vs_state_targeted_degree":
             stratified_correlation_summaries(
                 rows,
                 "U_over_t",
                 "mixing_time",
-                "thermal_polynomial_degree",
+                "state_targeted_polynomial_degree",
             ),
     }
