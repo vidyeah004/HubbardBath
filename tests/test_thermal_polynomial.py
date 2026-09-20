@@ -15,6 +15,7 @@ from src.thermal_polynomial import (
     parity_components,
     parity_reconstruction_error,
     qsvt_readiness_report,
+    sector_gibbs_trace_distance_error,
 )
 
 
@@ -123,3 +124,23 @@ def test_qsvt_readiness_report_is_bounded_and_flags_parity_split():
     assert report["bounded_by_one_on_grid"]
     assert report["parity_reconstruction_error"] < 1e-12
     assert report["requires_parity_split_for_standard_qsvt"]
+
+
+
+def test_sector_conditioned_polynomial_recovers_half_filled_gibbs_state():
+    h, alpha = reference()
+    approximation = minimum_degree_for_error(
+        beta=1.0,
+        alpha=alpha,
+        epsilon=1e-4,
+        max_degree=64,
+    )
+
+    error = sector_gibbs_trace_distance_error(
+        h,
+        approximation,
+        num_modes=4,
+        particle_number=2,
+    )
+
+    assert error < 1e-2
