@@ -1,6 +1,6 @@
 {
   "reproduced_on": "2026-09-20",
-  "source_commit": "2d61eab2ba3da9d3aab68706cb89cd8a9be96bbc",
+  "source_commit": "a5f358b6df087dd520f885583244f2589cbf74ea",
   "system": {
     "model": "two-site spinful Fermi-Hubbard",
     "fermionic_modes": 4,
@@ -16,10 +16,13 @@
     "exponent_p": 1.0398463761717918,
     "prefactor_A": 3.751372827265397,
     "loglog_r_squared": 0.9897161753798119,
-    "Delta_L_times_t_mix_range": [3.3, 4.6]
+    "Delta_L_times_t_mix_range": [
+      3.3,
+      4.6
+    ]
   },
   "hamiltonian_simulation": {
-    "reference_U_over_t": 4.0,
+    "reference_U_over_t": 4,
     "simulation_time_t": 1.5,
     "nonzero_pauli_terms": 11,
     "first_order_tail_exponent": -1.0131716901943157,
@@ -28,8 +31,8 @@
     "finest_second_order_operator_error": 0.0009186738589230472
   },
   "block_encoding": {
-    "reference_U_over_t": 4.0,
-    "lcu_alpha": 10.0,
+    "reference_U_over_t": 4,
+    "lcu_alpha": 10,
     "system_qubits": 4,
     "ancilla_label_qubits": 4,
     "normalized_hamiltonian_operator_norm": 0.8,
@@ -37,21 +40,24 @@
     "top_left_block_operator_error": 3.469519573084261e-16
   },
   "thermal_polynomial": {
-    "reference_U_over_t": 4.0,
-    "reference_beta_t": 1.0,
-    "reference_alpha": 10.0,
+    "reference_U_over_t": 4,
+    "reference_beta_t": 1,
+    "reference_alpha": 10,
     "uniform_scalar_tolerance": 0.0001,
     "reference_degree": 9,
-    "reference_scalar_error": 9.514160076584677e-05,
+    "reference_scalar_error": 0.00009514160076584677,
     "bounded_on_minus1_plus1": true,
-    "explicit_qsp_phase_synthesis_completed": false
+    "explicit_qsp_phase_synthesis_completed": true
   },
   "physical_vs_algorithmic": {
     "cases": 20,
     "valid_cases": 20,
     "physical_trace_distance_tolerance": 0.01,
     "algorithmic_gibbs_trace_distance_tolerance": 0.01,
-    "state_targeted_degree_range": [2, 28],
+    "state_targeted_degree_range": [
+      2,
+      28
+    ],
     "mixing_time_vs_state_targeted_degree": {
       "pearson_r": 0.7084461516095373,
       "spearman_rho": 0.805612330278577
@@ -69,7 +75,28 @@
     "finite two-site model",
     "physical mixing depends on the chosen Davies-inspired bath, rate scale, and initial state",
     "polynomial degree is an approximation/query-complexity proxy, not a compiled logical gate count",
-    "explicit QSP phase synthesis is not claimed",
+    "explicit QSP phases are validated for separate even/odd components; a coherent full QSVT circuit is not claimed",
     "correlations describe this deterministic finite parameter grid and are not universal statistical laws"
-  ]
+  ],
+  "qsp_phase_synthesis": {
+    "reference_U_over_t": 4,
+    "reference_beta_t": 1,
+    "reference_alpha": 10,
+    "state_targeted_thermal_polynomial_degree": 8,
+    "achieved_half_filled_gibbs_trace_distance": 0.008833700912697773,
+    "even_component": {
+      "degree": 8,
+      "full_phase_count": 9,
+      "solver_residual": 1.1676857397668883e-16,
+      "max_signal_reconstruction_error": 3.885780586188048e-16
+    },
+    "odd_component": {
+      "degree": 7,
+      "full_phase_count": 8,
+      "solver_residual": 1.3314002678121994e-16,
+      "max_signal_reconstruction_error": 3.3306690738754696e-16
+    },
+    "summed_even_odd_qsp_response_error": 6.661338147750939e-16,
+    "full_coherent_qsvt_circuit_completed": false
+  }
 }
