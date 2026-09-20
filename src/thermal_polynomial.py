@@ -29,6 +29,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.polynomial.chebyshev import chebinterpolate, chebval
 
+from src.hubbard import project_to_particle_sector, sector_indices
 from src.open_systems import trace_distance
 from src.thermal import gibbs_state
 
@@ -327,3 +328,74 @@ def qsvt_readiness_report(
         ),
         "requires_parity_split_for_standard_qsvt": True,
     }
+
+
+
+def sector_conditioned_gibbs_state_from_amplitude(
+    amplitude: Array,
+    num_modes: int,
+    particle_number: int,
+) -> Array:
+    """Project K K^dagger into a fixed-N sector and renormalize.
+
+    This is the canonical-sector version needed when the polynomial acts on
+    the full Fock-space Hamiltonian but the physical comparison is performed
+    at fixed particle number.
+    """
+    positive = amplitude @ amplitude.conj().T
+    expected_dimension = 2**num_modes
+    if positive.shape != (expected_dimension, expected_dimension):
+        raise ValueError("amplitude dimension does not match num_modes")
+
+    indices = sector_indices(num_modes, particle_number)
+    block = positive[np.ix_(indices, indices)]
+    trace = np.trace(block)
+
+    if abs(trace) < 1e-15:
+        raise ValueError("selected particle-number sector has zero weight")
+
+    rho = block / trace
+    return 0.5 * (rho + rho.conj().T)
+
+
+def approximate_sector_gibbs_state(
+    hamiltonian: Array,
+    approximation: ThermalPolynomial,
+    num_modes: int,
+    particle_number: int,
+) -> Array:
+    """Return the polynomial Gibbs approximation conditioned on fixed N."""
+    amplitude = approximate_thermal_amplitude(
+        hamiltonian,
+        approximation,
+    )
+    return sector_conditioned_gibbs_state_from_amplitude(
+        amplitude,
+        num_modes=num_modes,
+        particle_number=particle_number,
+    )
+
+
+def sector_gibbs_trace_distance_error(
+    hamiltonian: Array,
+    approximation: ThermalPolynomial,
+    num_modes: int,
+    particle_number: int,
+) -> float:
+    """Trace distance from the exact canonical Gibbs state in fixed N."""
+    approximate = approximate_sector_gibbs_state(
+        hamiltonian,
+        approximation,
+        num_modes=num_modes,
+        particle_number=particle_number,
+    )
+    h_sector, _ = project_to_particle_sector(
+        hamiltonian,
+        num_modes=num_modes,
+        particle_number=particle_number,
+    )
+    exact = gibbs_state(
+        h_sector,
+        approximation.beta,
+    )
+    return trace_distance(approximate, exact)
