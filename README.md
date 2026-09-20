@@ -13,9 +13,9 @@ The project is intentionally built from first principles before using higher-lev
 
 > How do interaction strength and temperature affect thermalisation in a finite Fermi–Hubbard system, and how does the difficulty of physical relaxation compare with the difficulty of algorithmically preparing the same Gibbs state?
 
-## Current milestone — 01: Fermi–Hubbard foundations
+## Current milestone — 02: Gibbs states and thermal observables
 
-The first milestone implements a two-site, spinful Fermi–Hubbard model in the full 16-dimensional Fock space.
+Milestone 01 established and validated the two-site spinful Fermi–Hubbard model. Milestone 02 adds the finite-temperature canonical ensemble in the half-filled (two-electron) sector and measures how equilibrium observables change across interaction strength and temperature.
 
 Mode ordering:
 
@@ -34,7 +34,7 @@ H = -t sum_sigma (c^†_{0,sigma} c_{1,sigma} + h.c.)
     - mu sum_{i,sigma} n_{i,sigma}.
 ```
 
-The fermionic operators are constructed explicitly with the Jordan–Wigner parity string. Milestone 01 verifies the canonical anti-commutation relations, Hermiticity, particle-number conservation, and the six-dimensional half-filled sector.
+The fermionic operators are constructed explicitly with the Jordan–Wigner parity string. The model is validated through canonical anti-commutation relations, Hermiticity, particle-number conservation, and the six-dimensional half-filled sector. The thermal state is then constructed as `rho_beta = exp(-beta H) / Z` inside that fixed-particle-number sector.
 
 ### Run the checks
 
@@ -45,13 +45,14 @@ pytest -q
 
 ### Run the notebook
 
-Open:
+Start with:
 
 ```text
 notebooks/01_fermi_hubbard_foundations.ipynb
+notebooks/02_gibbs_states_and_thermal_observables.ipynb
 ```
 
-It constructs the operators, verifies the algebra, diagonalises the two-site model, restricts to half filling, and plots the finite-system spectrum as the interaction ratio `U/t` is varied.
+Notebook 01 constructs and validates the fermionic model. Notebook 02 builds exact Gibbs states in the half-filled sector and studies thermal energy, von Neumann entropy, average double occupancy, and nearest-neighbour spin-z correlations across `U/t` and `beta t`.
 
 ## Planned research path
 
@@ -92,3 +93,12 @@ HubbardBath/
 ## Compute strategy
 
 Early milestones use exact NumPy/SciPy calculations because the two-site system is tiny and exact methods make validation easy. Larger open-system simulations will move to symmetry reduction, sparse operators, Krylov evolution, and GPU acceleration only when the system size makes those methods necessary.
+
+
+### Milestone 02 reproducible sweep
+
+```bash
+python experiments/run_thermal_sweep.py
+```
+
+This generates a CSV over the `U/t × beta t` grid and four heatmaps in `figures/`. These equilibrium maps will be the reference state for the upcoming open-system thermalisation milestone.
