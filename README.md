@@ -13,9 +13,9 @@ The project is intentionally built from first principles before using higher-lev
 
 > How do interaction strength and temperature affect thermalisation in a finite Fermi–Hubbard system, and how does the difficulty of physical relaxation compare with the difficulty of algorithmically preparing the same Gibbs state?
 
-## Current milestone — 03: Open-system thermalisation
+## Current milestone — 04: Liouvillian spectral analysis
 
-Milestones 01–02 established the two-site spinful Fermi–Hubbard model and its exact finite-temperature Gibbs states in the half-filled sector. Milestone 03 now couples that validated system to a number-conserving thermal bath and follows non-equilibrium relaxation under Lindblad dynamics.
+Milestones 01–03 established the two-site spinful Fermi–Hubbard model, its exact finite-temperature Gibbs states, and a validated number-conserving detailed-balance Lindblad model. Milestone 04 asks the first parameter-sweep research question: how do interaction strength and temperature change the Liouvillian spectral gap and the operational thermal mixing time?
 
 Mode ordering:
 
@@ -111,3 +111,19 @@ python experiments/run_thermalisation_demo.py
 ```
 
 The reference experiment starts from a doublon state at `U/t = 4` and `beta t = 1`, constructs a detailed-balance Lindbladian, verifies `||L(rho_beta)|| ≈ 0`, and tracks trace distance plus Hubbard observables as the system relaxes toward equilibrium. See `notes/03_open_system_thermalisation.md` for the modelling assumptions and validation targets.
+
+
+### Milestone 04 spectral-gap sweep
+
+```bash
+python experiments/run_spectral_gap_sweep.py
+```
+
+The default exact grid contains 30 two-site cases across `U/t` and `beta t`. For each case it computes the Liouvillian gap, inverse gap, persistent trace-distance mixing time, stationary-mode count, and `Delta_L * t_mix`. It also performs a descriptive log-log fit of mixing time versus inverse gap. This fit is explicitly treated as a finite-grid diagnostic, not an asymptotic many-body scaling law.
+
+See:
+
+```text
+notebooks/04_liouvillian_gap_vs_mixing.ipynb
+notes/04_liouvillian_gap_and_mixing.md
+```
