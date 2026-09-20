@@ -13,9 +13,9 @@ The project is intentionally built from first principles before using higher-lev
 
 > How do interaction strength and temperature affect thermalisation in a finite Fermi–Hubbard system, and how does the difficulty of physical relaxation compare with the difficulty of algorithmically preparing the same Gibbs state?
 
-## Current milestone — 06: Hamiltonian simulation
+## Current milestone — 07: LCU block encoding
 
-Milestones 01–05 established the two-site Fermi–Hubbard model, its finite-temperature and open-system physics, the Liouvillian-gap analysis, and an exact four-qubit Pauli representation. Milestone 06 uses that Pauli Hamiltonian for real-time simulation and benchmarks first- and second-order product formulas against exact evolution.
+Milestones 01–06 established the two-site Fermi–Hubbard model, its finite-temperature and open-system physics, Liouvillian-gap analysis, exact four-qubit Pauli representation, and product-formula Hamiltonian simulation. Milestone 07 turns the Pauli decomposition into an explicit LCU block encoding whose all-zero-ancilla block is H/alpha.
 
 Mode ordering:
 
@@ -175,3 +175,34 @@ notes/06_hamiltonian_simulation.md
 ```
 
 The next milestone reuses the same Pauli coefficients to build an explicit LCU/block encoding of `H/alpha`.
+
+
+### Milestone 07 LCU block encoding
+
+```bash
+python experiments/run_block_encoding.py
+```
+
+For
+
+```text
+H = sum_j alpha_j P_j
+alpha = sum_j |alpha_j|
+```
+
+the milestone constructs PREPARE and SELECT and verifies
+
+```text
+(<0| tensor I) U_H (|0> tensor I) = H / alpha.
+```
+
+For the reference `U/t = 4` Hamiltonian, the decomposition has 11 nonzero Pauli terms, uses four ancilla label qubits in the dense reference construction, and has `alpha = 10`. The code checks PREPARE normalization, SELECT unitarity, full block-encoding unitarity, top-left-block error, and the projected action on the doublon state.
+
+See:
+
+```text
+notebooks/07_lcu_block_encoding.ipynb
+notes/07_block_encoding.md
+```
+
+The next milestone connects this normalized matrix access to bounded polynomial approximation of thermal matrix functions and the QSVT framework.
