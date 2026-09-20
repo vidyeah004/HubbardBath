@@ -13,9 +13,9 @@ The project is intentionally built from first principles before using higher-lev
 
 > How do interaction strength and temperature affect thermalisation in a finite Fermi–Hubbard system, and how does the difficulty of physical relaxation compare with the difficulty of algorithmically preparing the same Gibbs state?
 
-## Current milestone — 07: LCU block encoding
+## Current milestone — 08: Thermal polynomials and QSVT readiness
 
-Milestones 01–06 established the two-site Fermi–Hubbard model, its finite-temperature and open-system physics, Liouvillian-gap analysis, exact four-qubit Pauli representation, and product-formula Hamiltonian simulation. Milestone 07 turns the Pauli decomposition into an explicit LCU block encoding whose all-zero-ancilla block is H/alpha.
+Milestones 01–07 established the two-site Fermi–Hubbard model, its finite-temperature and open-system physics, Liouvillian-gap analysis, exact four-qubit Pauli representation, Hamiltonian simulation, and an explicit LCU block encoding of H/alpha. Milestone 08 builds a bounded thermal matrix function on the encoded interval, approximates it with Chebyshev polynomials, and validates the resulting Gibbs-state approximation.
 
 Mode ordering:
 
@@ -206,3 +206,36 @@ notes/07_block_encoding.md
 ```
 
 The next milestone connects this normalized matrix access to bounded polynomial approximation of thermal matrix functions and the QSVT framework.
+
+
+### Milestone 08 bounded thermal polynomial / QSVT readiness
+
+```bash
+python experiments/run_thermal_polynomial_qsvt.py
+```
+
+The block encoding supplies `X = H/alpha` with spectrum inside `[-1,1]`. To keep the thermal target bounded on that full interval, this milestone uses
+
+```text
+f(x) = exp[- beta alpha (x + 1) / 2].
+```
+
+At the matrix level,
+
+```text
+f(H/alpha)
+= exp[-beta alpha/2] exp[-beta H/2].
+```
+
+The scalar prefactor cancels when the squared amplitude operator is normalized into a Gibbs state.
+
+The experiment measures minimum Chebyshev degree versus `beta`, `U/t`, `alpha`, and target error; verifies the matrix polynomial directly; measures Gibbs-state trace-distance error; and separates the Chebyshev series into even/odd parity components required by standard QSP/QSVT synthesis.
+
+Explicit QSP phase angles and a compiled fault-tolerant QSVT circuit are **not** claimed by this milestone.
+
+See:
+
+```text
+notebooks/08_thermal_polynomial_qsvt.ipynb
+notes/08_thermal_polynomial_qsvt.md
+```
