@@ -42,7 +42,8 @@ def test_reference_comparison_case_uses_same_half_filled_target():
     assert row["stationary_mode_count"] == 1
     assert np.isfinite(row["mixing_time"])
     assert row["thermal_polynomial_degree"] > 0
-    assert row["half_filled_gibbs_trace_distance"] < 1e-2
+    assert row["state_targeted_polynomial_degree"] > 0
+    assert row["state_targeted_gibbs_trace_distance"] <= 1e-2
     assert row["comparison_valid"]
 
 
@@ -55,6 +56,7 @@ def test_comparison_summary_contains_both_primary_relationships():
             "mixing_time": float(i),
             "inverse_liouvillian_gap": float(2 * i),
             "thermal_polynomial_degree": int(i + 2),
+            "state_targeted_polynomial_degree": int(i + 3),
             "beta_alpha": float(3 * i),
             "comparison_valid": True,
         })
@@ -62,5 +64,5 @@ def test_comparison_summary_contains_both_primary_relationships():
     summary = comparison_summary(rows)
 
     assert summary["valid_cases"] == 4
-    assert summary["mixing_time_vs_degree"]["n"] == 4
-    assert summary["inverse_gap_vs_degree"]["n"] == 4
+    assert summary["mixing_time_vs_state_targeted_degree"]["n"] == 4
+    assert summary["inverse_gap_vs_state_targeted_degree"]["n"] == 4
